@@ -22,14 +22,10 @@ app.get('/hello', (req, res) => {
 });
 
 // route for express to pass data to the template: "urls_index.ejs"
-app.get(
-  '/urls',
-  (req,
-  (res) => {
-    const templateVars = { urls: urlDatabase };
-    res.render('urls_index', templateVars);
-  })
-);
+app.get('/urls', (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render('urls_index', templateVars);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
