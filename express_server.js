@@ -10,6 +10,10 @@ const urlDatabase = {
   '9sm5xK': 'http://www.google.com'
 };
 
+//add parsing middleware to convert body from buffer to readable string
+app.use(express.urlencoded({ extended: true }));
+
+//Routes
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -36,6 +40,12 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
+});
+
+//Route for submitting the form
+app.post('/urls', (req, res) => {
+  console.log(req.body);
+  res.send('ok');
 });
 
 app.listen(PORT, () => {
