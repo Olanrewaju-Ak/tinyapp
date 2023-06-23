@@ -10,6 +10,24 @@ const urlDatabase = {
   '9sm5xK': 'http://www.google.com'
 };
 
+function generateRandomString() {
+  //get a random number -math.random
+  //how do you generate random letters
+  //concantenate the letters and strings?
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  const length = 6; //because we want a 6char string
+  let result = ' ';
+
+  for (let i = 0; i < length; i++) {
+    let index = Math.floor(Math.random() * characters.length);
+    result += characters.charAt(index);
+  }
+
+  return result;
+}
+generateRandomString();
+
 //add parsing middleware to convert body from buffer to readable string
 app.use(express.urlencoded({ extended: true }));
 
