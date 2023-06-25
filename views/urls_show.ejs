@@ -20,7 +20,14 @@
 					<%= id %>
 				</a>
 			</p>
+			<form method="POST" action="/urls/<%= id %>">
+				<label for="longURL">New URL:</label>
+				<input type="text" class="form-control" type="text" name="longURL" placeholder="http://"
+					style="width: 300px; display:inline-block">
+				<button type="submit" class="btn btn-primary">Edit</button>
+			</form>
 		</div>
+
 		<div class="card-footer text-muted"></div>
 	</div>
 	<!-- Bootstrap JS -->
