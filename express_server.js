@@ -68,6 +68,11 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
+//Route for user login
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username).redirect('/urls');
+});
+
 //Route for submitting the form
 app.post('/urls', (req, res) => {
   let newId = generateRandomString();
