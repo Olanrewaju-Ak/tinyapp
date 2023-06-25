@@ -11,13 +11,22 @@
 
 <body>
 	<main>
-		<form method="POST" action="/login">
-			<input type="text" name="username" placeholder="Username" style="width: 300px; margin: 1em" />
-			<button type="submit">Login</button>
-		</form>
-		<h4>
-			<%= username %>
-		</h4>
+		<% if (username) {%>
+			<p>Logged in as: <b>
+					<%= username %>!
+				</b></p>
+			<form method="POST" action="/logout">
+				<button type="submit">Logout</button>
+			</form>
+			<%} else { %>
+
+				<form method="POST" action="/login">
+					<input type="text" name="username" placeholder="Username" style="width: 300px; margin: 1em" />
+					<button type="submit">Login</button>
+				</form>
+				<%}%>
+					
+
 	</main>
 	<!-- Bootstrap JS -->
 	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
