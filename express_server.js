@@ -59,16 +59,22 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+//route to handle shortURL requests
+app.get('/u/:id', (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  if (!longURL) {
+    res.status(404).send('URL id does not exist in database,Plese enter a valid id');
+  }
+  res.redirect(longURL);
+});
+
 //Route for submitting the form
 app.post('/urls', (req, res) => {
   let newId = generateRandomString();
-  console.log(newId);
-   urlDatabase[newId]=req.body.longURL;
- 
-  console.log(urlDatabase);
 
-  res.send('ok');
-  // res.redirect('/');
+  urlDatabase[newId] = req.body.longURL;
+
+  res.redirect(`/urls/${newId}`);
 });
 
 app.listen(PORT, () => {
