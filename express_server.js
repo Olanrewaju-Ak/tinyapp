@@ -68,6 +68,13 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
+//Route for deleteing a url
+app.post('/urls/:id/delete', (req, res) => {
+  const urlId = req.params.id;
+  delete urlDatabase[urlId];
+  res.redirect('/urls');
+});
+
 //Route for submitting the form
 app.post('/urls', (req, res) => {
   let newId = generateRandomString();
