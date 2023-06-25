@@ -44,6 +44,12 @@ app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
+/* 
+
+GET ROUTES
+
+*/
+
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
   const templateVars = {
@@ -76,9 +82,20 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
+/*
+
+POST ROUTES
+
+*/
+
 //Route for user login
 app.post('/login', (req, res) => {
   res.cookie('username', req.body.username).redirect('/urls');
+});
+
+//Route for user logout
+app.post('/logout', (req, res) => {
+  res.clearCookie('username').redirect('/urls');
 });
 
 //Route for submitting the form
