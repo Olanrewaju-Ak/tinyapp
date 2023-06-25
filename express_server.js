@@ -17,7 +17,7 @@ function generateRandomString() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   const length = 6; //because we want a 6char string
-  let result = ' ';
+  let result = '';
 
   for (let i = 0; i < length; i++) {
     let index = Math.floor(Math.random() * characters.length);
@@ -26,7 +26,6 @@ function generateRandomString() {
 
   return result;
 }
-generateRandomString();
 
 //add parsing middleware to convert body from buffer to readable string
 app.use(express.urlencoded({ extended: true }));
@@ -62,8 +61,14 @@ app.get('/urls/:id', (req, res) => {
 
 //Route for submitting the form
 app.post('/urls', (req, res) => {
-  console.log(req.body);
+  let newId = generateRandomString();
+  console.log(newId);
+   urlDatabase[newId]=req.body.longURL;
+ 
+  console.log(urlDatabase);
+
   res.send('ok');
+  // res.redirect('/');
 });
 
 app.listen(PORT, () => {
