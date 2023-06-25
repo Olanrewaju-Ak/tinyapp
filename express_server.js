@@ -68,13 +68,6 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
-//Route for deleteing a url
-app.post('/urls/:id/delete', (req, res) => {
-  const urlId = req.params.id;
-  delete urlDatabase[urlId];
-  res.redirect('/urls');
-});
-
 //Route for submitting the form
 app.post('/urls', (req, res) => {
   let newId = generateRandomString();
@@ -82,6 +75,22 @@ app.post('/urls', (req, res) => {
   urlDatabase[newId] = req.body.longURL;
 
   res.redirect(`/urls/${newId}`);
+});
+
+//Route for editing a long url
+app.post('/urls/:id', (req, res) => {
+  const newLongURL = req.body.longURL;
+
+  urlDatabase[req.params.id] = newLongURL;
+
+  res.redirect('/urls');
+});
+
+//Route for deleteing a url
+app.post('/urls/:id/delete', (req, res) => {
+  const urlId = req.params.id;
+  delete urlDatabase[urlId];
+  res.redirect('/urls');
 });
 
 app.listen(PORT, () => {
