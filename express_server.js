@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 const PORT = 8080; // default port 8080
 
 //setting ejs as view engine
@@ -44,13 +46,19 @@ app.get('/hello', (req, res) => {
 
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {
+    username: req.cookies['username'],
+    urls: urlDatabase
+  };
   res.render('urls_index', templateVars);
 });
 
 //GET route to show form
 app.get('/urls/new', (req, res) => {
-  res.render('urls_new');
+  const templateVars = {
+    username: req.cookies['username']
+  };
+  res.render('urls_new', templateVars);
 });
 
 //route for single url
