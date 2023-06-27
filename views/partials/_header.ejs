@@ -11,21 +11,31 @@
 
 <body>
 	<main>
-		<% if (username) {%>
-			<p>Logged in as: <b>
-					<%= username %>!
-				</b></p>
-			<form method="POST" action="/logout">
-				<button type="submit">Logout</button>
-			</form>
-			<%} else { %>
+		<% if (user_id) {%>
 
-				<form method="POST" action="/login">
-					<input type="text" name="username" placeholder="Username" style="width: 300px; margin: 1em" />
-					<button type="submit">Login</button>
-				</form>
-				<%}%>
-					
+			<%for (const id in users) { %>
+				<% if(id===user_id){ %>
+					<p> Logged in as: <b>
+							<%= users[id].email %>
+						</b>
+					</p>
+					<%}%>
+						<% } %>
+
+							<form method="POST" action="/logout">
+								<button type="submit">Logout</button>
+							</form>
+
+							<%} else { %>
+
+								<form method="POST" action="/login">
+									<input type="email" name="email" placeholder="email" style="width: 300px; margin: 1em" />
+									<button type="submit">Login</button>
+								</form>
+								<%}%>
+
+									
+
 
 	</main>
 	<!-- Bootstrap JS -->
