@@ -27,10 +27,12 @@ const users = {
   }
 };
 
-function generateRandomString() {
-  //get a random number -math.random
-  //how do you generate random letters
-  //concantenate the letters and strings?
+/*
+
+HELPER FUNCTIONS
+
+*/
+const generateRandomString = function () {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
   const length = 6; //because we want a 6char string
@@ -42,7 +44,17 @@ function generateRandomString() {
   }
 
   return result;
-}
+};
+
+const getUserByEmail = function (email) {
+  for (const user in users) {
+    if (users[user].email === email) {
+      return user;
+    } else {
+      return null;
+    }
+  }
+};
 
 //add parsing middleware to convert body from buffer to readable string
 app.use(express.urlencoded({ extended: true }));
@@ -59,7 +71,7 @@ app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
-/* 
+/*
 
 GET ROUTES
 
@@ -74,7 +86,7 @@ app.get('/register', (req, res) => {
 app.get('/urls', (req, res) => {
   const templateVars = {
     users,
-    user_id: req.cookies['user_id'],
+    userId: req.cookies['user_id'],
     urls: urlDatabase
   };
   res.render('urls_index', templateVars);
@@ -83,7 +95,7 @@ app.get('/urls', (req, res) => {
 //GET route to show URL form
 app.get('/urls/new', (req, res) => {
   const templateVars = {
-    user_id: req.cookies['user_id']
+    userId: req.cookies['user_id']
   };
   res.render('urls_new', templateVars);
 });
@@ -110,23 +122,39 @@ POST ROUTES
 */
 // Route for User Registration
 app.post('/register', (req, res) => {
+  const userEmail = req.body.email;
+  const userPassword = req.body.password;
   const userObj = {};
   userObj.id = generateRandomString();
-  userObj.email = req.body.email;
-  userObj.password = req.body.password;
-  users[userObj.id] = userObj;
-  res.cookie('user_id', userObj.id).redirect('/urls');
+  userObj.email = userEmail;
+  userObj.password = userPassword;
+
+  if (!userEmail || !userPassword) {
+    res.status(400).send('Please enter a valid email and password');
+  } else if (getUserByEmail(userEmail) !== null) {
+    res.status(400).send('Email address is taken, please select another email address');
+  } else {
+    users[userObj.id] = userObj;
+    res.cookie('user_id', userObj.id).redirect('/urls');
+  }
+  
 });
 
 //Route for user login
 app.post('/login', (req, res) => {
-  let user_id;
-  for (const user in users) {
-    if (users[user].email === req.body.email) {
-      user_id = user;
-    }
+  const userInputEmail = req.body.email;
+  let userSearch = getUserByEmail(userInputEmail);
+  let userId;
+  // for (const user in users) {
+  //   if (users[user].email === req.body.email) {
+  //     userId = user;
+  //   }
+  // }
+
+  if (userSearch !== null) {
+    userId = userSearch;
   }
-  res.cookie('user_id', user_id).redirect('/urls');
+  res.cookie('user_id', userId).redirect('/urls');
 });
 
 //Route for user logout
@@ -137,18 +165,14 @@ app.post('/logout', (req, res) => {
 //Route for submitting the form
 app.post('/urls', (req, res) => {
   let newId = generateRandomString();
-
   urlDatabase[newId] = req.body.longURL;
-
   res.redirect(`/urls/${newId}`);
 });
 
 //Route for editing a long url
 app.post('/urls/:id', (req, res) => {
   const newLongURL = req.body.longURL;
-
   urlDatabase[req.params.id] = newLongURL;
-
   res.redirect('/urls');
 });
 
