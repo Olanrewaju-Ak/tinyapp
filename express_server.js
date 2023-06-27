@@ -50,6 +50,11 @@ GET ROUTES
 
 */
 
+//route for user registration
+app.get('/register', (req, res) => {
+  res.render('user_registration');
+});
+
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
   const templateVars = {
@@ -59,7 +64,7 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-//GET route to show form
+//GET route to show URL form
 app.get('/urls/new', (req, res) => {
   const templateVars = {
     username: req.cookies['username']
@@ -87,6 +92,10 @@ app.get('/u/:id', (req, res) => {
 POST ROUTES
 
 */
+// Route for User Registration
+// app.post('/register',(req,res)=>{
+
+// })
 
 //Route for user login
 app.post('/login', (req, res) => {
@@ -124,5 +133,5 @@ app.post('/urls/:id/delete', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Tiny app listening on port ${PORT}!`);
 });
