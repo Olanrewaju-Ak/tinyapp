@@ -11,10 +11,10 @@
 
 <body>
 	<main>
-		<% if (user_id) {%>
+		<% if (userId) {%>
 
 			<%for (const id in users) { %>
-				<% if(id===user_id){ %>
+				<% if(id===userId){ %>
 					<p> Logged in as: <b>
 							<%= users[id].email %>
 						</b>
@@ -34,7 +34,7 @@
 								</form>
 								<%}%>
 
-									
+
 
 
 	</main>
