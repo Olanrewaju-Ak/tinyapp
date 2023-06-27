@@ -7,9 +7,24 @@ const PORT = 8080; // default port 8080
 //setting ejs as view engine
 app.set('view engine', 'ejs');
 
+//URL database
 const urlDatabase = {
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com'
+};
+
+//User Database
+const users = {
+  userRandomID: {
+    id: 'userRandomID',
+    email: 'user@example.com',
+    password: 'purple-monkey-dinosaur'
+  },
+  user2RandomID: {
+    id: 'user2RandomID',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk'
+  }
 };
 
 function generateRandomString() {
@@ -58,7 +73,8 @@ app.get('/register', (req, res) => {
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
   const templateVars = {
-    username: req.cookies['username'],
+    users,
+    user_id: req.cookies['user_id'],
     urls: urlDatabase
   };
   res.render('urls_index', templateVars);
@@ -67,7 +83,7 @@ app.get('/urls', (req, res) => {
 //GET route to show URL form
 app.get('/urls/new', (req, res) => {
   const templateVars = {
-    username: req.cookies['username']
+    user_id: req.cookies['user_id']
   };
   res.render('urls_new', templateVars);
 });
@@ -93,18 +109,29 @@ POST ROUTES
 
 */
 // Route for User Registration
-// app.post('/register',(req,res)=>{
-
-// })
+app.post('/register', (req, res) => {
+  const userObj = {};
+  userObj.id = generateRandomString();
+  userObj.email = req.body.email;
+  userObj.password = req.body.password;
+  users[userObj.id] = userObj;
+  res.cookie('user_id', userObj.id).redirect('/urls');
+});
 
 //Route for user login
 app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username).redirect('/urls');
+  let user_id;
+  for (const user in users) {
+    if (users[user].email === req.body.email) {
+      user_id = user;
+    }
+  }
+  res.cookie('user_id', user_id).redirect('/urls');
 });
 
 //Route for user logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('username').redirect('/urls');
+  res.clearCookie('user_id').redirect('/urls');
 });
 
 //Route for submitting the form
