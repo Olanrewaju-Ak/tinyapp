@@ -115,6 +115,11 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
+//route for login page
+app.get('/login', (req, res) => {
+  res.render('user_login');
+});
+
 /*
 
 POST ROUTES
@@ -137,7 +142,6 @@ app.post('/register', (req, res) => {
     users[userObj.id] = userObj;
     res.cookie('user_id', userObj.id).redirect('/urls');
   }
-  
 });
 
 //Route for user login
