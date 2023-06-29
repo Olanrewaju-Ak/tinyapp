@@ -116,7 +116,13 @@ app.get('/u/:id', (req, res) => {
 
 //route for login page
 app.get('/login', (req, res) => {
-  res.render('user_login');
+  const userId = req.cookies.user_id;
+
+  if (!userId) {
+    res.render('user_login');
+    return;
+  }
+  res.redirect('/urls');
 });
 
 /*
