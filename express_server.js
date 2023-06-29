@@ -49,11 +49,10 @@ const generateRandomString = function () {
 const getUserByEmail = function (email) {
   for (const user in users) {
     if (users[user].email === email) {
-      return user;
-    } else {
-      return null;
+      return users[user];
     }
   }
+  return;
 };
 
 //add parsing middleware to convert body from buffer to readable string
@@ -127,43 +126,44 @@ POST ROUTES
 */
 // Route for User Registration
 app.post('/register', (req, res) => {
-  const userEmail = req.body.email;
-  const userPassword = req.body.password;
-  const userObj = {};
-  userObj.id = generateRandomString();
-  userObj.email = userEmail;
-  userObj.password = userPassword;
+  const { email, password } = req.body;
+  const existingUser = getUserByEmail(email);
 
-  if (!userEmail || !userPassword) {
+  const newUser = {};
+  newUser.id = generateRandomString();
+  newUser.email = email;
+  newUser.password = password;
+
+  if (!email || !password) {
     res.status(400).send('Please enter a valid email and password');
-  } else if (getUserByEmail(userEmail) !== null) {
+  } else if (existingUser) {
     res.status(400).send('Email address is taken, please select another email address');
   } else {
-    users[userObj.id] = userObj;
-    res.cookie('user_id', userObj.id).redirect('/urls');
+    users[newUser.id] = newUser;
+    res.cookie('user_id', newUser.id).redirect('/urls');
   }
+  console.log(users);
 });
 
 //Route for user login
 app.post('/login', (req, res) => {
-  const userInputEmail = req.body.email;
-  let userSearch = getUserByEmail(userInputEmail);
-  let userId;
-  // for (const user in users) {
-  //   if (users[user].email === req.body.email) {
-  //     userId = user;
-  //   }
-  // }
+  const { email, password } = req.body;
 
-  if (userSearch !== null) {
-    userId = userSearch;
+  let user = getUserByEmail(email);
+  console.log(user);
+  let userId;
+
+  if (user && password === user.password) {
+    userId = user.id;
+    res.cookie('user_id', userId).redirect('/urls');
+  } else {
+    res.status(403).send('Invalid Credientials');
   }
-  res.cookie('user_id', userId).redirect('/urls');
 });
 
 //Route for user logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id').redirect('/urls');
+  res.clearCookie('user_id').redirect('/login');
 });
 
 //Route for submitting the form
