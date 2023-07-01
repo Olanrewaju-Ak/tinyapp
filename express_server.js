@@ -1,6 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
+const bcrypt = require('bcryptjs');
 
 /**
  * Configuration
@@ -30,17 +31,17 @@ const users = {
   userRandomID: {
     id: 'userRandomID',
     email: 'user@example.com',
-    password: 'purple-monkey-dinosaur'
+    password: bcrypt.hashSync('purple-monkey-dinosaur', 10)
   },
   user2RandomID: {
     id: 'user2RandomID',
     email: 'user2@example.com',
-    password: 'dishwasher-funk'
+    password: bcrypt.hashSync('dishwasher-funk', 10)
   },
   ug6kd: {
     id: 'ug6kd',
     email: 'test@test.com',
-    password: 'test'
+    password: bcrypt.hashSync('test', 10)
   }
 };
 
@@ -133,7 +134,6 @@ app.get('/register', (req, res) => {
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
   const userId = req.cookies.user_id;
-  console.log(urlDatabase);
 
   if (!userId) {
     res.status(404).send('Please login to access urls page');
@@ -219,7 +219,7 @@ app.post('/register', (req, res) => {
   const newUser = {};
   newUser.id = generateRandomString();
   newUser.email = email;
-  newUser.password = password;
+  newUser.password = bcrypt.hashSync(password);
 
   if (!email || !password) {
     res.status(400).send('Please enter a valid email and password');
@@ -228,6 +228,7 @@ app.post('/register', (req, res) => {
   } else {
     users[newUser.id] = newUser;
     //set cookie for user using their userId and redirect to urls page.
+
     res.cookie('user_id', newUser.id).redirect('/urls');
   }
   console.log(users);
@@ -236,12 +237,15 @@ app.post('/register', (req, res) => {
 //Route for user login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-
   let user = getUserByEmail(email);
+  const hashedPassword = user.password;
   console.log(user);
   let userId;
+  console.log('unhashed password :', password);
+  console.log('hashedPassword :', hashedPassword);
+  console.log(bcrypt.compareSync(password, hashedPassword));
 
-  if (user && password === user.password) {
+  if (user && bcrypt.compareSync(password, hashedPassword)) {
     userId = user.id;
     res.cookie('user_id', userId).redirect('/urls');
   } else {
