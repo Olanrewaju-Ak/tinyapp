@@ -133,24 +133,13 @@ app.get('/register', (req, res) => {
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
   const userId = req.cookies.user_id;
+  console.log(urlDatabase);
 
   if (!userId) {
     res.status(404).send('Please login to access urls page');
   }
 
-  // const urlsForUser = function (id) {
-  //   let result = {};
-  //   for (const url in urlDatabase) {
-  //     if (urlDatabase[url].userId === userId) {
-  //       console.log(url);
-  //       result[url] = urlDatabase[url];
-  //     }
-  //   }
-  //   return result;
-  // };
-
   foundUser = urlsForUser(userId);
-  console.log('foundUser: ', foundUser);
 
   const templateVars = {
     users,
@@ -180,10 +169,11 @@ app.get('/urls/:id', (req, res) => {
   const userId = req.cookies.user_id; // id of the logged in user
   const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
   const id = req.params.id;
+  if (!urlDatabase[id]) {
+    res.status(404).send('URL does not exist ');
+    return;
+  }
 
-  console.log('id :', id);
-  console.log('userUrls :', userUrls);
-  console.log('userUrls.id :', userUrls[id]);
   if (!userId) {
     res.status(403).send('You do not have authorization to see page, Please login to access');
   }
@@ -269,6 +259,7 @@ app.post('/urls', (req, res) => {
   userId = req.cookies.user_id;
   if (!userId) {
     res.status(401).send('You are not authorised to do that 😝, login to gain access ');
+    return;
   }
   //generate TinyUrl for newLongUrl
   let newLongUrlId = generateRandomString();
@@ -283,16 +274,55 @@ app.post('/urls', (req, res) => {
 
 //Route for editing a long url
 app.post('/urls/:id', (req, res) => {
+  const urlId = req.params.id;
+  const userId = req.cookies.user_id; // id of the logged in user
+  const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
   const newLongUrl = req.body.longUrl;
-  urlDatabase[req.params.id] = newLongUrl;
-  res.redirect('/urls');
+  //checking if user is logged in
+  if (!userId) {
+    res.status(401).send('You are not authorised to do that 😝, login to gain access ');
+    return;
+  }
+
+  //checking if urlId exists in the database
+  else if (!urlDatabase[urlId]) {
+    res.status(404).send('URL does not exist ');
+    return;
+  } else if (userUrls[urlId] === undefined) {
+    res.status(401).send('You are not authorised edit this URL');
+    return;
+  } else {
+    urlDatabase[urlId].longUrl = newLongUrl;
+    console.log(urlDatabase);
+    res.redirect('/urls');
+  }
 });
 
 //Route for deleteing a url
 app.post('/urls/:id/delete', (req, res) => {
   const urlId = req.params.id;
-  delete urlDatabase[urlId];
-  res.redirect('/urls');
+  const userId = req.cookies.user_id; // id of the logged in user
+  const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
+  //checking if user is logged in
+  if (!userId) {
+    res.status(401).send('You are not authorised to do that 😝, login to gain access ');
+    return;
+  }
+
+  //checking if urlId exists in the database
+  else if (!urlDatabase[urlId]) {
+    res.status(404).send('URL does not exist ');
+    return;
+  }
+
+  //checking if the dynamic url id belongs to the user
+  else if (userUrls[urlId] === undefined) {
+    res.status(401).send('You are not authorised delete this URL');
+    return;
+  } else {
+    delete urlDatabase[urlId];
+    res.redirect('/urls');
+  }
 });
 
 app.listen(PORT, () => {
