@@ -15,12 +15,14 @@ app.set('view engine', 'ejs');
  */
 app.use(morgan('dev'));
 app.use(cookieParser());
+//add parsing middleware to convert body from buffer to readable string
 app.use(express.urlencoded({ extended: false }));
 
 //URL database
 const urlDatabase = {
-  b2xVn2: 'http://www.lighthouselabs.ca',
-  '9sm5xK': 'http://www.google.com'
+  b2xVn2: { longUrl: 'http://www.lighthouselabs.ca', userId: 'userRandomID' },
+  '9sm5xK': { longUrl: 'http://www.google.com', userId: 'user2RandomID' },
+  st53K: { longUrl: 'http://www.amazon.com', userId: 'user2RandomID' }
 };
 
 //User Database
@@ -34,6 +36,11 @@ const users = {
     id: 'user2RandomID',
     email: 'user2@example.com',
     password: 'dishwasher-funk'
+  },
+  ug6kd: {
+    id: 'ug6kd',
+    email: 'test@test.com',
+    password: 'test'
   }
 };
 
@@ -42,6 +49,10 @@ const users = {
 HELPER FUNCTIONS
 
 */
+/**
+ * TinyUrl Generator
+ * @returns tinyURl string
+ */
 const generateRandomString = function () {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -56,6 +67,11 @@ const generateRandomString = function () {
   return result;
 };
 
+/**
+ *
+ * @param {*} email
+ * @returns
+ */
 const getUserByEmail = function (email) {
   for (const user in users) {
     if (users[user].email === email) {
@@ -65,8 +81,24 @@ const getUserByEmail = function (email) {
   return;
 };
 
-//add parsing middleware to convert body from buffer to readable string
-app.use(express.urlencoded({ extended: true }));
+/**
+ * @param {*} id
+ */
+const urlsForUser = function (id) {
+  let urls = {};
+  for (const url in urlDatabase) {
+    if (urlDatabase[url].userId === id) {
+      urls[url] = urlDatabase[url];
+    }
+  }
+  return urls;
+};
+
+//
+//
+// ROUTES AND ENDPOINTS
+//
+//
 
 //Routes
 app.get('/', (req, res) => {
@@ -100,10 +132,30 @@ app.get('/register', (req, res) => {
 
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
+  const userId = req.cookies.user_id;
+
+  if (!userId) {
+    res.status(404).send('Please login to access urls page');
+  }
+
+  // const urlsForUser = function (id) {
+  //   let result = {};
+  //   for (const url in urlDatabase) {
+  //     if (urlDatabase[url].userId === userId) {
+  //       console.log(url);
+  //       result[url] = urlDatabase[url];
+  //     }
+  //   }
+  //   return result;
+  // };
+
+  foundUser = urlsForUser(userId);
+  console.log('foundUser: ', foundUser);
+
   const templateVars = {
     users,
     userId: req.cookies['user_id'],
-    urls: urlDatabase
+    urls: foundUser
   };
   res.render('urls_index', templateVars);
 });
@@ -125,17 +177,32 @@ app.get('/urls/new', (req, res) => {
 
 //route for single url
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
-  res.render('urls_show', templateVars);
+  const userId = req.cookies.user_id; // id of the logged in user
+  const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
+  const id = req.params.id;
+
+  console.log('id :', id);
+  console.log('userUrls :', userUrls);
+  console.log('userUrls.id :', userUrls[id]);
+  if (!userId) {
+    res.status(403).send('You do not have authorization to see page, Please login to access');
+  }
+  //checking if the dynamic url id belongs to the user
+  if (userUrls[id] === undefined) {
+    res.status(404).send('You do not own the URL you are trying to view');
+  } else {
+    const templateVars = { id, longUrl: urlDatabase[req.params.id].longUrl };
+    res.render('urls_show', templateVars);
+  }
 });
 
 //route to handle shortURL requests
 app.get('/u/:id', (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  if (!longURL) {
+  const longUrl = urlDatabase[req.params.id].longUrl;
+  if (!longUrl) {
     res.status(404).send('URL id does not exist in database 😓,Plese enter a valid id');
   }
-  res.redirect(longURL);
+  res.redirect(longUrl);
 });
 
 //route for login page
@@ -203,15 +270,21 @@ app.post('/urls', (req, res) => {
   if (!userId) {
     res.status(401).send('You are not authorised to do that 😝, login to gain access ');
   }
-  let newId = generateRandomString();
-  urlDatabase[newId] = req.body.longURL;
-  res.redirect(`/urls/${newId}`);
+  //generate TinyUrl for newLongUrl
+  let newLongUrlId = generateRandomString();
+  let longUrl = req.body.longUrl;
+  //creating the newLongUrl object in database to pass in the lonUrl key and value
+  urlDatabase[newLongUrlId] = {};
+  urlDatabase[newLongUrlId].longUrl = longUrl;
+  urlDatabase[newLongUrlId].userId = userId;
+
+  res.redirect(`/urls/${newLongUrlId}`);
 });
 
 //Route for editing a long url
 app.post('/urls/:id', (req, res) => {
-  const newLongURL = req.body.longURL;
-  urlDatabase[req.params.id] = newLongURL;
+  const newLongUrl = req.body.longUrl;
+  urlDatabase[req.params.id] = newLongUrl;
   res.redirect('/urls');
 });
 
