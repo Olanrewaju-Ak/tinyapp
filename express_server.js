@@ -19,12 +19,11 @@ app.set('view engine', 'ejs');
  * Middleware setup
  */
 app.use(morgan('dev'));
-// app.use(cookieParser());
 app.use(
   cookieSession({
     name: 'user_id',
     keys: ['197b2e27-b1fa-4890-a457-5283ba1f09d0', '917dc71b-20d6-490d-bdf8-3ecc53cb55b3'],
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000 // cookie valid for 24 hours
   })
 );
 //add parsing middleware to convert body from buffer to readable string
@@ -79,7 +78,8 @@ GET ROUTES
 
 //Home page route will redirect to urls if user is loggen in or login page if not
 app.get('/', (req, res) => {
-  const userId = req.session.user_id;
+  const userId = req.session.user_id; //if a user has a session on going
+  //if user is not logged in redirect to login page
   if (!userId) {
     res.redirect('/login');
   }
@@ -88,7 +88,7 @@ app.get('/', (req, res) => {
 
 //route for user registration
 app.get('/register', (req, res) => {
-  const userId = req.session.user_id;
+  const userId = req.session.user_id; //set cookie session for user using their id a
   const templateVars = { userId, users };
   if (!userId) {
     res.render('user_registration', templateVars);
@@ -103,10 +103,13 @@ app.get('/urls', (req, res) => {
   const userId = req.session.user_id;
 
   if (!userId) {
-    res.status(404).send('Please login to access urls page').redirect('/login');
+    res
+      .status(404)
+      .send('<html><body><h2>🙄 Please login to access urls page</h2></body></html>')
+      .redirect('/login');
   }
-
-  foundUser = urlsForUser(userId, urlDatabase);
+  //check the database to see get user Urls
+  let foundUser = urlsForUser(userId, urlDatabase);
 
   const templateVars = {
     users,
@@ -134,19 +137,25 @@ app.get('/urls/new', (req, res) => {
 //route for single url
 app.get('/urls/:id', (req, res) => {
   const userId = req.session.user_id; // id of the logged in user
-  const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
+  const userUrls = urlsForUser(userId, urlDatabase); //  returns an object containing urls that belong to the user
   const id = req.params.id;
   if (!urlDatabase[id]) {
-    res.status(404).send('URL does not exist ');
+    res.status(404).send('<html><body><h2> 😥 URL does not exist</h2></body></html>');
     return;
   }
 
   if (!userId) {
-    res.status(403).send('You do not have authorization to see page, Please login to access');
+    res
+      .status(403)
+      .send(
+        '<html><body><h2> 😎 You do not have authorization to see page, Please login to access</h2></body></html>'
+      );
   }
   //checking if the dynamic url id belongs to the user
   if (userUrls[id] === undefined) {
-    res.status(404).send('You do not own the URL you are trying to view');
+    res
+      .status(404)
+      .send('<html><body><h2> 🙄 You do not own the URL you are trying to view</h2></body></html>');
   } else {
     const templateVars = { id, userId, users, longUrl: urlDatabase[req.params.id].longUrl };
     res.render('urls_show', templateVars);
@@ -157,7 +166,11 @@ app.get('/urls/:id', (req, res) => {
 app.get('/u/:id', (req, res) => {
   const longUrl = urlDatabase[req.params.id].longUrl;
   if (!longUrl) {
-    res.status(404).send('URL id does not exist in database 😓,Plese enter a valid id');
+    res
+      .status(404)
+      .send(
+        '<html><body><h2>URL id does not exist in database 😓,Plese enter a valid id</h2></body></html>'
+      );
   }
   res.redirect(longUrl);
 });
@@ -182,7 +195,7 @@ POST ROUTES
 // Route for User Registration
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-  const existingUser = getUserByEmail(email, users);
+  const existingUser = getUserByEmail(email, users); //checks if userdata is in the database
 
   const newUser = {};
   newUser.id = generateRandomString();
@@ -190,22 +203,30 @@ app.post('/register', (req, res) => {
   newUser.password = bcrypt.hashSync(password);
 
   if (!email || !password) {
-    res.status(400).send('Please enter a valid email and password');
+    res
+      .status(400)
+      .send('<html><body><h2>Please enter a valid email and password</h2></body></html>');
   } else if (existingUser) {
-    res.status(400).send('Email address is taken, please select another email address');
+    res
+      .status(400)
+      .send(
+        '<html><body><h2> 🚫 Email address is unavailable, try another email address</h2></body></html>'
+      );
   } else {
     users[newUser.id] = newUser;
     //set cookie for user using their userId and redirect to urls page.
-
     req.session.user_id = newUser.id;
     res.redirect('/urls');
   }
-  console.log(users);
 });
 
 //Route for user login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(403).send('<html><body><h2>Invalid Credientials</h2></body></html>');
+    return;
+  }
   let user = getUserByEmail(email, users);
   const hashedPassword = user.password;
   let userId;
@@ -213,24 +234,28 @@ app.post('/login', (req, res) => {
   if (user && bcrypt.compareSync(password, hashedPassword)) {
     userId = user.id;
     req.session.user_id = userId;
-    // res.cookie('user_id', userSessionId)
+    //set cookie for user using their userId and redirect to urls page.
     res.redirect('/urls');
   } else {
-    res.status(403).send('Invalid Credientials');
+    res.status(403).send('<html><body><h2>Invalid Credientials</h2></body></html>');
   }
 });
 
 //Route for user logout
 app.post('/logout', (req, res) => {
-  req.session = null;
+  req.session = null; //clear user id from session and redirect to login page
   res.redirect('/login');
 });
 
 //Route for submitting the form for new Url
 app.post('/urls', (req, res) => {
-  userId = req.session.user_id;
+  let userId = req.session.user_id;
   if (!userId) {
-    res.status(401).send('You are not authorised to do that 😝, login to gain access ');
+    res
+      .status(401)
+      .send(
+        '<html><body><h2>You are not authorised to do that 😝, login to gain access </h2></body></html>'
+      );
     return;
   }
   //generate TinyUrl for newLongUrl
@@ -252,7 +277,11 @@ app.put('/urls/:id', (req, res) => {
   const newLongUrl = req.body.longUrl;
   //checking if user is logged in
   if (!userId) {
-    res.status(401).send('You are not authorised to do that 😝, login to gain access ');
+    res
+      .status(401)
+      .send(
+        '<html><body><h2>You are not authorised to do that 😝, login to gain access </h2></body></html>'
+      );
     return;
   }
 
@@ -261,11 +290,10 @@ app.put('/urls/:id', (req, res) => {
     res.status(404).send('URL does not exist ');
     return;
   } else if (userUrls[urlId] === undefined) {
-    res.status(401).send('You are not authorised edit this URL');
+    res.status(401).send('<html><body><h2>You are not authorised edit this URL</h2></body></html>');
     return;
   } else {
     urlDatabase[urlId].longUrl = newLongUrl;
-    console.log(urlDatabase);
     res.redirect('/urls');
   }
 });
@@ -277,19 +305,25 @@ app.delete('/urls/:id/delete', (req, res) => {
   const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
   //checking if user is logged in
   if (!userId) {
-    res.status(401).send('You are not authorised to do that 😝, login to gain access ');
+    res
+      .status(401)
+      .send(
+        '<html><body><h2>You are not authorised to do that 😝, login to gain access </h2></body></html>'
+      );
     return;
   }
 
   //checking if urlId exists in the database
   else if (!urlDatabase[urlId]) {
-    res.status(404).send('URL does not exist ');
+    res.status(404).send('<html><body><h2>URL does not exist</h2></body></html>');
     return;
   }
 
   //checking if the dynamic url id belongs to the user
   else if (userUrls[urlId] === undefined) {
-    res.status(401).send('You are not authorised delete this URL');
+    res
+      .status(401)
+      .send('<html><body><h2>You are not authorised delete this URL</h2></body></html>');
     return;
   } else {
     delete urlDatabase[urlId];
