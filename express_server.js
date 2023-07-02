@@ -82,10 +82,10 @@ const generateRandomString = function () {
  * @param {*} email
  * @returns
  */
-const getUserByEmail = function (email) {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user];
+const getUserByEmail = function (email, database) {
+  for (const user in database) {
+    if (database[user].email === email) {
+      return database[user];
     }
   }
   return;
@@ -223,7 +223,7 @@ POST ROUTES
 // Route for User Registration
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-  const existingUser = getUserByEmail(email);
+  const existingUser = getUserByEmail(email, users);
 
   const newUser = {};
   newUser.id = generateRandomString();
@@ -247,7 +247,7 @@ app.post('/register', (req, res) => {
 //Route for user login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  let user = getUserByEmail(email);
+  let user = getUserByEmail(email, users);
   const hashedPassword = user.password;
   let userId;
 
