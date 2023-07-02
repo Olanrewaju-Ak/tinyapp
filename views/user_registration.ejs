@@ -9,14 +9,17 @@
 
 <body>
 	<main>
-		<h1>Create Account</h1>
-		<form action="/register" method="POST">
-			<label for="email">Email</label>
-			<input type="email" name="email" placeholder="Enter your email..." />
-			<label for="password">Password</label>
-			<input type="password" name="password" placeholder="Enter a password..." />
-			<button type="submit">Register</button>
-		</form>
+		<%- include('partials/_header') %>
+			<h1>Create Account</h1>
+			<form action="/register" method="POST">
+				<label for="email">Email</label>
+				<input type="email" name="email" placeholder="Enter your email..." style="width: 600px; margin: 1em" />
+				<br />
+				<label for="password">Password</label>
+				<input type="password" name="password" placeholder="Enter a password..." style="width: 600px; margin: 1em" />
+				<br />
+				<button type="submit" class="btn btn-primary">Register</button>
+			</form>
 	</main>
 </body>
 
