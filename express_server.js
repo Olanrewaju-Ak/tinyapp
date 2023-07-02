@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
+const cookieSession = require('cookie-session');
 
 /**
  * Configuration
@@ -15,7 +16,14 @@ app.set('view engine', 'ejs');
  * Middleware setup
  */
 app.use(morgan('dev'));
-app.use(cookieParser());
+// app.use(cookieParser());
+app.use(
+  cookieSession({
+    name: 'user_id',
+    keys: ['197b2e27-b1fa-4890-a457-5283ba1f09d0', '917dc71b-20d6-490d-bdf8-3ecc53cb55b3'],
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  })
+);
 //add parsing middleware to convert body from buffer to readable string
 app.use(express.urlencoded({ extended: false }));
 
@@ -27,21 +35,22 @@ const urlDatabase = {
 };
 
 //User Database
+const saltRounds = 10; //for hashing passwords
 const users = {
   userRandomID: {
     id: 'userRandomID',
     email: 'user@example.com',
-    password: bcrypt.hashSync('purple-monkey-dinosaur', 10)
+    password: bcrypt.hashSync('purple-monkey-dinosaur', saltRounds)
   },
   user2RandomID: {
     id: 'user2RandomID',
     email: 'user2@example.com',
-    password: bcrypt.hashSync('dishwasher-funk', 10)
+    password: bcrypt.hashSync('dishwasher-funk', saltRounds)
   },
   ug6kd: {
     id: 'ug6kd',
     email: 'test@test.com',
-    password: bcrypt.hashSync('test', 10)
+    password: bcrypt.hashSync('test', saltRounds)
   }
 };
 
@@ -121,7 +130,7 @@ GET ROUTES
 
 //route for user registration
 app.get('/register', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
 
   if (!userId) {
     res.render('user_registration');
@@ -133,7 +142,7 @@ app.get('/register', (req, res) => {
 
 // route for express to pass data to the template: "urls_index.ejs"
 app.get('/urls', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
 
   if (!userId) {
     res.status(404).send('Please login to access urls page');
@@ -143,7 +152,7 @@ app.get('/urls', (req, res) => {
 
   const templateVars = {
     users,
-    userId: req.cookies['user_id'],
+    userId: req.session['user_id'],
     urls: foundUser
   };
   res.render('urls_index', templateVars);
@@ -151,7 +160,7 @@ app.get('/urls', (req, res) => {
 
 //GET route to show URL form
 app.get('/urls/new', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
 
   //if the user is not logged in , it redirects to the login page
   if (!userId) {
@@ -166,7 +175,7 @@ app.get('/urls/new', (req, res) => {
 
 //route for single url
 app.get('/urls/:id', (req, res) => {
-  const userId = req.cookies.user_id; // id of the logged in user
+  const userId = req.session.user_id; // id of the logged in user
   const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
   const id = req.params.id;
   if (!urlDatabase[id]) {
@@ -197,7 +206,7 @@ app.get('/u/:id', (req, res) => {
 
 //route for login page
 app.get('/login', (req, res) => {
-  const userId = req.cookies.user_id;
+  const userId = req.session.user_id;
 
   if (!userId) {
     res.render('user_login');
@@ -229,7 +238,8 @@ app.post('/register', (req, res) => {
     users[newUser.id] = newUser;
     //set cookie for user using their userId and redirect to urls page.
 
-    res.cookie('user_id', newUser.id).redirect('/urls');
+    req.session.user_id = newUser.id;
+    res.redirect('/urls');
   }
   console.log(users);
 });
@@ -239,15 +249,13 @@ app.post('/login', (req, res) => {
   const { email, password } = req.body;
   let user = getUserByEmail(email);
   const hashedPassword = user.password;
-  console.log(user);
   let userId;
-  console.log('unhashed password :', password);
-  console.log('hashedPassword :', hashedPassword);
-  console.log(bcrypt.compareSync(password, hashedPassword));
 
   if (user && bcrypt.compareSync(password, hashedPassword)) {
     userId = user.id;
-    res.cookie('user_id', userId).redirect('/urls');
+    req.session.user_id = userId;
+    // res.cookie('user_id', userSessionId)
+    res.redirect('/urls');
   } else {
     res.status(403).send('Invalid Credientials');
   }
@@ -255,12 +263,13 @@ app.post('/login', (req, res) => {
 
 //Route for user logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id').redirect('/login');
+  req.session = null;
+  res.redirect('/login');
 });
 
 //Route for submitting the form for new Url
 app.post('/urls', (req, res) => {
-  userId = req.cookies.user_id;
+  userId = req.session.user_id;
   if (!userId) {
     res.status(401).send('You are not authorised to do that 😝, login to gain access ');
     return;
@@ -279,7 +288,7 @@ app.post('/urls', (req, res) => {
 //Route for editing a long url
 app.post('/urls/:id', (req, res) => {
   const urlId = req.params.id;
-  const userId = req.cookies.user_id; // id of the logged in user
+  const userId = req.session.user_id; // id of the logged in user
   const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
   const newLongUrl = req.body.longUrl;
   //checking if user is logged in
@@ -305,7 +314,7 @@ app.post('/urls/:id', (req, res) => {
 //Route for deleteing a url
 app.post('/urls/:id/delete', (req, res) => {
   const urlId = req.params.id;
-  const userId = req.cookies.user_id; // id of the logged in user
+  const userId = req.session.user_id; // id of the logged in user
   const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
   //checking if user is logged in
   if (!userId) {
