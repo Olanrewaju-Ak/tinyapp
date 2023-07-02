@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
+const methodOverride = require('method-override');
 
 //Helper functions
 const { generateRandomString, getUserByEmail, urlsForUser } = require('./helpers');
@@ -29,6 +30,9 @@ app.use(
 );
 //add parsing middleware to convert body from buffer to readable string
 app.use(express.urlencoded({ extended: false }));
+
+//method override
+app.use(methodOverride('_method'));
 
 //URL database
 const urlDatabase = {
@@ -239,7 +243,7 @@ app.post('/urls', (req, res) => {
 });
 
 //Route for editing a long url
-app.post('/urls/:id', (req, res) => {
+app.put('/urls/:id', (req, res) => {
   const urlId = req.params.id;
   const userId = req.session.user_id; // id of the logged in user
   const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
@@ -265,7 +269,7 @@ app.post('/urls/:id', (req, res) => {
 });
 
 //Route for deleteing a url
-app.post('/urls/:id/delete', (req, res) => {
+app.delete('/urls/:id/delete', (req, res) => {
   const urlId = req.params.id;
   const userId = req.session.user_id; // id of the logged in user
   const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
