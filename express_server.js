@@ -4,6 +4,9 @@ const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
 
+//Helper functions
+const { generateRandomString, getUserByEmail, urlsForUser } = require('./helpers');
+
 /**
  * Configuration
  */
@@ -54,56 +57,6 @@ const users = {
   }
 };
 
-/*
-
-HELPER FUNCTIONS
-
-*/
-/**
- * TinyUrl Generator
- * @returns tinyURl string
- */
-const generateRandomString = function () {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-  const length = 6; //because we want a 6char string
-  let result = '';
-
-  for (let i = 0; i < length; i++) {
-    let index = Math.floor(Math.random() * characters.length);
-    result += characters.charAt(index);
-  }
-
-  return result;
-};
-
-/**
- *
- * @param {*} email
- * @returns
- */
-const getUserByEmail = function (email, database) {
-  for (const user in database) {
-    if (database[user].email === email) {
-      return database[user];
-    }
-  }
-  return;
-};
-
-/**
- * @param {*} id
- */
-const urlsForUser = function (id) {
-  let urls = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userId === id) {
-      urls[url] = urlDatabase[url];
-    }
-  }
-  return urls;
-};
-
 //
 //
 // ROUTES AND ENDPOINTS
@@ -148,7 +101,7 @@ app.get('/urls', (req, res) => {
     res.status(404).send('Please login to access urls page');
   }
 
-  foundUser = urlsForUser(userId);
+  foundUser = urlsForUser(userId, urlDatabase);
 
   const templateVars = {
     users,
@@ -176,7 +129,7 @@ app.get('/urls/new', (req, res) => {
 //route for single url
 app.get('/urls/:id', (req, res) => {
   const userId = req.session.user_id; // id of the logged in user
-  const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
+  const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
   const id = req.params.id;
   if (!urlDatabase[id]) {
     res.status(404).send('URL does not exist ');
@@ -289,7 +242,7 @@ app.post('/urls', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const urlId = req.params.id;
   const userId = req.session.user_id; // id of the logged in user
-  const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
+  const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
   const newLongUrl = req.body.longUrl;
   //checking if user is logged in
   if (!userId) {
@@ -315,7 +268,7 @@ app.post('/urls/:id', (req, res) => {
 app.post('/urls/:id/delete', (req, res) => {
   const urlId = req.params.id;
   const userId = req.session.user_id; // id of the logged in user
-  const userUrls = urlsForUser(userId); // this gives an object containing urls that belong to the user
+  const userUrls = urlsForUser(userId, urlDatabase); // this gives an object containing urls that belong to the user
   //checking if user is logged in
   if (!userId) {
     res.status(401).send('You are not authorised to do that 😝, login to gain access ');
