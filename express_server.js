@@ -1,5 +1,4 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
@@ -68,15 +67,8 @@ const users = {
 //
 
 //Routes
-app.get('/', (req, res) => {
-  res.send('Hello!');
-});
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
 
 /*
@@ -85,12 +77,21 @@ GET ROUTES
 
 */
 
+//Home page route will redirect to urls if user is loggen in or login page if not
+app.get('/', (req, res) => {
+  const userId = req.session.user_id;
+  if (!userId) {
+    res.redirect('/login');
+  }
+  res.redirect('/urls');
+});
+
 //route for user registration
 app.get('/register', (req, res) => {
   const userId = req.session.user_id;
-
+  const templateVars = { userId, users };
   if (!userId) {
-    res.render('user_registration');
+    res.render('user_registration', templateVars);
     return;
   }
   //if the user is logged in , it redirects to the urls page
@@ -102,7 +103,7 @@ app.get('/urls', (req, res) => {
   const userId = req.session.user_id;
 
   if (!userId) {
-    res.status(404).send('Please login to access urls page');
+    res.status(404).send('Please login to access urls page').redirect('/login');
   }
 
   foundUser = urlsForUser(userId, urlDatabase);
@@ -147,7 +148,7 @@ app.get('/urls/:id', (req, res) => {
   if (userUrls[id] === undefined) {
     res.status(404).send('You do not own the URL you are trying to view');
   } else {
-    const templateVars = { id, longUrl: urlDatabase[req.params.id].longUrl };
+    const templateVars = { id, userId, users, longUrl: urlDatabase[req.params.id].longUrl };
     res.render('urls_show', templateVars);
   }
 });
@@ -164,9 +165,10 @@ app.get('/u/:id', (req, res) => {
 //route for login page
 app.get('/login', (req, res) => {
   const userId = req.session.user_id;
+  const templateVars = { userId, users };
 
   if (!userId) {
-    res.render('user_login');
+    res.render('user_login', templateVars);
     return;
   }
   res.redirect('/urls');
