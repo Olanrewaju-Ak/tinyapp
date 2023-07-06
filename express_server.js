@@ -164,14 +164,16 @@ app.get('/urls/:id', (req, res) => {
 
 //route to handle shortURL requests
 app.get('/u/:id', (req, res) => {
-  const longUrl = urlDatabase[req.params.id].longUrl;
-  if (!longUrl) {
+  const shortUrl = req.params.id;
+  if (!urlDatabase[shortUrl]) {
     res
       .status(404)
       .send(
         '<html><body><h2>URL id does not exist in database 😓,Plese enter a valid id</h2></body></html>'
       );
+    return;
   }
+  const longUrl = urlDatabase[shortUrl].longUrl;
   res.redirect(longUrl);
 });
 
